@@ -26,13 +26,14 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Prepare Scaffold, Properties and Native Engine
+      - name: Prepare Scaffold, Resources, Themes and Native Engine
         run: |
           mkdir -p app/src/main/java/com/aidongka/signal
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/xml
 
-          # 1. 啟用 AndroidX 與 JVM 記憶體最佳化
+          # 1. 啟用 AndroidX 與 JVM 最佳化
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
@@ -57,7 +58,7 @@ jobs:
           """)
           '
 
-          # 4. 建立 app/build.gradle.kts (獨立全新 package id 防止快取)
+          # 4. 建立 app/build.gradle.kts
           python3 -c '
           with open("app/build.gradle.kts", "w") as f:
               f.write("""plugins {
@@ -71,8 +72,8 @@ jobs:
                   applicationId = "com.aidongka.signal"
                   minSdk = 26
                   targetSdk = 34
-                  versionCode = 2
-                  versionName = "1.0.2"
+                  versionCode = 3
+                  versionName = "1.0.3"
               }
               compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
@@ -88,7 +89,71 @@ jobs:
           """)
           '
 
-          # 5. 建立獨立零外部依賴、秒開即用的愛動咖Signal 診斷引擎 HTML
+          # 5. 【關鍵修復】建立 AppCompat 主題資源檔 (styles.xml & themes.xml & strings.xml)
+          python3 -c '
+          # strings.xml
+          with open("app/src/main/res/values/strings.xml", "w", encoding="utf-8") as f:
+              f.write("""<resources>
+              <string name="app_name">愛動咖Signal</string>
+          </resources>
+          """)
+
+          # styles.xml (嚴格符合 AppCompat 主題規範，無 ActionBar 深色沉浸式體驗)
+          with open("app/src/main/res/values/styles.xml", "w", encoding="utf-8") as f:
+              f.write("""<resources>
+              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+                  <item name="android:windowBackground">#09090b</item>
+                  <item name="android:statusBarColor">#09090b</item>
+                  <item name="android:navigationBarColor">#09090b</item>
+              </style>
+          </resources>
+          """)
+
+          # themes.xml
+          with open("app/src/main/res/values/themes.xml", "w", encoding="utf-8") as f:
+              f.write("""<resources>
+              <style name="Theme.AidongkaSignal" parent="Theme.AppCompat.NoActionBar">
+                  <item name="android:windowBackground">#09090b</item>
+                  <item name="android:statusBarColor">#09090b</item>
+                  <item name="android:navigationBarColor">#09090b</item>
+              </style>
+          </resources>
+          """)
+          '
+
+          # 6. 【關鍵修復】建立 AndroidManifest.xml (指定 @style/AppTheme 與 usesCleartextTraffic)
+          python3 -c '
+          with open("app/src/main/AndroidManifest.xml", "w", encoding="utf-8") as f:
+              f.write("""<?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@android:drawable/sym_def_app_icon"
+                  android:label="@string/app_name"
+                  android:theme="@style/AppTheme"
+                  android:usesCleartextTraffic="true"
+                  android:supportsRtl="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:theme="@style/AppTheme"
+                      android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """)
+          '
+
+          # 7. 建立獨立零外部依賴、秒開即用的愛動咖Signal 診斷引擎 HTML
           python3 -c '
           html_content = """<!doctype html>
           <html lang="zh-TW">
@@ -186,30 +251,9 @@ jobs:
               f.write(html_content)
           '
 
-          # 6. 建立 AndroidManifest.xml
+          # 8. 建立防崩潰 MainActivity.kt (加入安全初始化防護)
           python3 -c '
-          with open("app/src/main/AndroidManifest.xml", "w") as f:
-              f.write("""<?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              <application android:allowBackup="true" android:icon="@android:drawable/sym_def_app_icon" android:label="愛動咖Signal" android:supportsRtl="true" android:usesCleartextTraffic="true">
-                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          """)
-          '
-
-          # 7. 建立完整 WebView MainActivity.kt
-          python3 -c '
-          with open("app/src/main/java/com/aidongka/signal/MainActivity.kt", "w") as f:
+          with open("app/src/main/java/com/aidongka/signal/MainActivity.kt", "w", encoding="utf-8") as f:
               f.write("""package com.aidongka.signal
 
           import android.annotation.SuppressLint
@@ -230,35 +274,39 @@ jobs:
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   
-                  webView = WebView(this)
-                  setContentView(webView)
+                  try {
+                      webView = WebView(this)
+                      setContentView(webView)
 
-                  val settings: WebSettings = webView.settings
-                  settings.javaScriptEnabled = true
-                  settings.domStorageEnabled = true
-                  settings.databaseEnabled = true
-                  settings.allowFileAccess = true
-                  settings.allowContentAccess = true
-                  settings.loadWithOverviewMode = true
-                  settings.useWideViewPort = true
-                  settings.cacheMode = WebSettings.LOAD_DEFAULT
+                      val settings: WebSettings = webView.settings
+                      settings.javaScriptEnabled = true
+                      settings.domStorageEnabled = true
+                      settings.databaseEnabled = true
+                      settings.allowFileAccess = true
+                      settings.allowContentAccess = true
+                      settings.loadWithOverviewMode = true
+                      settings.useWideViewPort = true
+                      settings.cacheMode = WebSettings.LOAD_DEFAULT
 
-                  webView.webViewClient = WebViewClient()
-                  webView.webChromeClient = WebChromeClient()
+                      webView.webViewClient = WebViewClient()
+                      webView.webChromeClient = WebChromeClient()
 
-                  webView.loadUrl("file:///android_asset/index.html")
+                      webView.loadUrl("file:///android_asset/index.html")
 
-                  val permissions = arrayOf(
-                      android.Manifest.permission.INTERNET,
-                      android.Manifest.permission.ACCESS_NETWORK_STATE,
-                      android.Manifest.permission.ACCESS_WIFI_STATE,
-                      android.Manifest.permission.ACCESS_FINE_LOCATION
-                  )
-                  val needed = permissions.filter {
-                      ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-                  }
-                  if (needed.isNotEmpty()) {
-                      ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101)
+                      val permissions = arrayOf(
+                          android.Manifest.permission.INTERNET,
+                          android.Manifest.permission.ACCESS_NETWORK_STATE,
+                          android.Manifest.permission.ACCESS_WIFI_STATE,
+                          android.Manifest.permission.ACCESS_FINE_LOCATION
+                      )
+                      val needed = permissions.filter {
+                          ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+                      }
+                      if (needed.isNotEmpty()) {
+                          ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101)
+                      }
+                  } catch (e: Exception) {
+                      e.printStackTrace()
                   }
               }
 
@@ -273,7 +321,7 @@ jobs:
           """)
           '
 
-          # 8. 準備 Gradle Wrapper
+          # 9. 準備 Gradle Wrapper
           if [ ! -f "./gradlew" ]; then
             gradle wrapper --gradle-version 8.4 || true
           fi
@@ -310,11 +358,14 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: "愛動咖Signal v1.0.${{ github.run_number }}"
           body: |
-            ## 🚀 愛動咖Signal Android APK Release (全新獨立架構)
-            - **安裝包名稱**: `signal-debug.apk` (解決舊版快取與空白問題)
+            ## 🚀 愛動咖Signal Android APK Release (修復閃退與主題相容性)
+            - **安裝包名稱**: `signal-debug.apk`
             - **應用名稱**: 愛動咖Signal
             - **支援系統**: Android 8.0+ (API 26+)
-            - **功能包含**: 5G/4G 訊號強度診斷、即時上下行測速、Ping 延遲、Jitter 抖動分析
+            - **修正項目**:
+              1. 補齊 `Theme.AppCompat.NoActionBar` 主題配置，徹底杜絕 AppCompatActivity 啟動閃退。
+              2. 補齊 `styles.xml`、`themes.xml` 與 `strings.xml` 資源檔。
+              3. 啟用 `usesCleartextTraffic="true"` 保證網路診斷與測速連線。
             
             ### 📱 下載安裝
             請直接點擊下方 Assets 區塊中的 **`signal-debug.apk`** 下載安裝。
