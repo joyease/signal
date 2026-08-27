@@ -26,11 +26,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Prepare Scaffold and Wrapper
+      - name: Prepare Scaffold, Properties and Wrapper
         run: |
           mkdir -p app/src/main/java/com/netdiagnostic/pro
           mkdir -p app/src/main/res/values
 
+          # 1. 啟用 AndroidX 與 JVM 記憶體最佳化
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
+
+          # 2. 建立 AndroidManifest.xml
           if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
             echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
             echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
@@ -47,6 +53,7 @@ jobs:
             echo '</manifest>' >> app/src/main/AndroidManifest.xml
           fi
 
+          # 3. 建立 MainActivity.kt
           if [ ! -f "app/src/main/java/com/netdiagnostic/pro/MainActivity.kt" ]; then
             echo 'package com.netdiagnostic.pro' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
             echo 'import android.os.Bundle' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
@@ -58,6 +65,7 @@ jobs:
             echo '}' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
           fi
 
+          # 4. 準備 Gradle Wrapper
           if [ ! -f "./gradlew" ]; then
             gradle wrapper --gradle-version 8.4 || true
           fi
