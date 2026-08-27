@@ -288,10 +288,10 @@ export default function App() {
           <button
             onClick={() => setIsGithubModalOpen(true)}
             className="flex items-center space-x-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-dim transition active:scale-95"
-            title="同步至 GitHub 倉庫並啟用雙發布"
+            title="GitHub 設定與發布指南"
           >
             <Github className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">同步到 GitHub</span>
+            <span>GitHub 設定指南</span>
           </button>
 
           {/* Phone Frame Mockup Toggle */}
@@ -305,16 +305,7 @@ export default function App() {
             title="切換 Android 手機外框模式"
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>{isPhoneFrame ? '全寬網頁檢視' : '手機 APK 視圖'}</span>
-          </button>
-
-          {/* GitHub Actions APK Release Download Button */}
-          <button
-            onClick={() => setIsGithubModalOpen(true)}
-            className="flex items-center space-x-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-4 py-2 rounded-xl shadow-lg glow-emerald transition transform active:scale-95"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>下載 APK / 發布指南</span>
+            <span>{isPhoneFrame ? '全寬網頁檢視' : '手機視圖'}</span>
           </button>
         </div>
       </header>
