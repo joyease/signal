@@ -28,8 +28,8 @@ export const MonoRepoViewer: React.FC<{ onOpenGithubSync?: () => void }> = ({ on
   const [isZipping, setIsZipping] = useState(false);
   const [zipSuccess, setZipSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'files' | 'workflow' | 'guide' | 'github'>('files');
-  const [githubUser, setGithubUser] = useState('YOUR_GITHUB_USERNAME');
-  const [repoName, setRepoName] = useState('net-diagnostic-pro');
+  const [githubUser, setGithubUser] = useState('joyease');
+  const [repoName, setRepoName] = useState('signal');
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, id: string) => {

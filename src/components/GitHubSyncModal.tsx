@@ -22,8 +22,8 @@ export const GitHubSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }>
   onClose,
 }) => {
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
-  const [repoName, setRepoName] = useState('net-diagnostic-pro');
-  const [githubUser, setGithubUser] = useState('YOUR_GITHUB_USERNAME');
+  const [repoName, setRepoName] = useState('signal');
+  const [githubUser, setGithubUser] = useState('joyease');
   const [isZipping, setIsZipping] = useState(false);
   const [zipSuccess, setZipSuccess] = useState(false);
 
