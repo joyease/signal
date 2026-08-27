@@ -26,73 +26,41 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Ensure Android Project Scaffold & Wrapper
+      - name: Prepare Scaffold and Wrapper
         run: |
-          # 1. 自動安裝 Gradle Wrapper
+          mkdir -p app/src/main/java/com/netdiagnostic/pro
+          mkdir -p app/src/main/res/values
+
+          if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
+            echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
+            echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
+            echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> app/src/main/AndroidManifest.xml
+            echo '    <application android:allowBackup="true" android:label="愛動咖測網速" android:supportsRtl="true">' >> app/src/main/AndroidManifest.xml
+            echo '        <activity android:name=".MainActivity" android:exported="true">' >> app/src/main/AndroidManifest.xml
+            echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
+            echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
+            echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
+            echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
+            echo '        </activity>' >> app/src/main/AndroidManifest.xml
+            echo '    </application>' >> app/src/main/AndroidManifest.xml
+            echo '</manifest>' >> app/src/main/AndroidManifest.xml
+          fi
+
+          if [ ! -f "app/src/main/java/com/netdiagnostic/pro/MainActivity.kt" ]; then
+            echo 'package com.netdiagnostic.pro' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo 'import android.os.Bundle' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo 'import androidx.activity.ComponentActivity' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo 'class MainActivity : ComponentActivity() {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo '    override fun onCreate(savedInstanceState: Bundle?) {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo '        super.onCreate(savedInstanceState)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo '    }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+            echo '}' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+          fi
+
           if [ ! -f "./gradlew" ]; then
-            echo "Installing Gradle Wrapper..."
             gradle wrapper --gradle-version 8.4 || true
           fi
-
-          # 2. 自動補齊 AndroidManifest.xml
-          mkdir -p app/src/main/res/values
-          if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
-            cat << 'EOF' > app/src/main/AndroidManifest.xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <application
-        android:allowBackup="true"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:label="愛動咖測網速"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-</manifest>
-EOF
-          fi
-
-          # 3. 自動補齊 MainActivity.kt
-          mkdir -p app/src/main/java/com/netdiagnostic/pro
-          if [ ! -f "app/src/main/java/com/netdiagnostic/pro/MainActivity.kt" ]; then
-            cat << 'EOF' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-package com.netdiagnostic.pro
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Surface {
-                    Text("愛動咖測網速 - NetDiagnostic Pro")
-                }
-            }
-        }
-    }
-}
-EOF
-          fi
-
-      - name: Grant execute permission for gradlew
-        run: |
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
           fi
