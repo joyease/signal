@@ -42,7 +42,7 @@ jobs:
           with open("settings.gradle.kts", "w") as f:
               f.write("""pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = "SignalApp"
+          rootProject.name = "AidongkaSignal"
           include(":app")
           """)
           '
@@ -57,7 +57,7 @@ jobs:
           """)
           '
 
-          # 4. 建立 app/build.gradle.kts (更新 package id 防止快取)
+          # 4. 建立 app/build.gradle.kts (獨立全新 package id 防止快取)
           python3 -c '
           with open("app/build.gradle.kts", "w") as f:
               f.write("""plugins {
@@ -88,7 +88,7 @@ jobs:
           """)
           '
 
-          # 5. 建立獨立零外部依賴、保證立即載入的愛動咖Signal 診斷引擎 HTML
+          # 5. 建立獨立零外部依賴、秒開即用的愛動咖Signal 診斷引擎 HTML
           python3 -c '
           html_content = """<!doctype html>
           <html lang="zh-TW">
@@ -100,7 +100,7 @@ jobs:
               * { box-sizing: border-box; margin: 0; padding: 0; }
               body { background-color: #09090b; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
               .card { width: 100%; max-width: 420px; background: #121217; border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; }
-              .badge { display: inline-block; font-size: 12px; font-weight: 700; color: #06b6d4; background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); padding: 4px 12px; rounded: 9999px; border-radius: 20px; margin-bottom: 12px; }
+              .badge { display: inline-block; font-size: 12px; font-weight: 700; color: #06b6d4; background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
               .title { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 4px; }
               .sub { font-size: 12px; color: #94a3b8; margin-bottom: 24px; }
               .gauge-box { background: #18181f; border-radius: 20px; padding: 28px 16px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
@@ -207,7 +207,7 @@ jobs:
           """)
           '
 
-          # 7. 建立完整 WebView MainActivity.kt (全面啟用本機儲存與即時渲染)
+          # 7. 建立完整 WebView MainActivity.kt
           python3 -c '
           with open("app/src/main/java/com/aidongka/signal/MainActivity.kt", "w") as f:
               f.write("""package com.aidongka.signal
@@ -292,7 +292,6 @@ jobs:
       - name: Rename APK to signal-debug.apk
         run: |
           mkdir -p release-apk
-          # 找到產出的 apk 並重新命名為 signal-debug.apk
           find app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} release-apk/signal-debug.apk \;
           echo "APK successfully renamed to signal-debug.apk"
           ls -la release-apk/
