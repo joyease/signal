@@ -26,29 +26,89 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Ensure Android Project Scaffold & Wrapper
+        run: |
+          # 1. 自動安裝 Gradle Wrapper
+          if [ ! -f "./gradlew" ]; then
+            echo "Installing Gradle Wrapper..."
+            gradle wrapper --gradle-version 8.4 || true
+          fi
+
+          # 2. 自動補齊 AndroidManifest.xml
+          mkdir -p app/src/main/res/values
+          if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
+            cat << 'EOF' > app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <application
+        android:allowBackup="true"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="愛動咖測網速"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+EOF
+          fi
+
+          # 3. 自動補齊 MainActivity.kt
+          mkdir -p app/src/main/java/com/netdiagnostic/pro
+          if [ ! -f "app/src/main/java/com/netdiagnostic/pro/MainActivity.kt" ]; then
+            cat << 'EOF' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+package com.netdiagnostic.pro
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                Surface {
+                    Text("愛動咖測網速 - NetDiagnostic Pro")
+                }
+            }
+        }
+    }
+}
+EOF
+          fi
+
       - name: Grant execute permission for gradlew
         run: |
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
-          elif [ -f "./app/gradlew" ]; then
-            chmod +x ./app/gradlew
           fi
 
       - name: Build Debug APK
         run: |
           if [ -f "./gradlew" ]; then
             ./gradlew assembleDebug --stacktrace
-          elif [ -f "./app/gradlew" ]; then
-            cd app && ./gradlew assembleDebug --stacktrace && cd ..
           else
-            echo "No gradle wrapper found at root or app/, running standard gradle build"
-            gradle assembleDebug || echo "Build step ready"
+            gradle assembleDebug --stacktrace
           fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NetDiagnostic-Pro-APK
+          name: 愛動咖測網速-APK
           path: |
             **/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/release/*.apk
@@ -59,9 +119,9 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "NetDiagnostic Pro v1.0.${{ github.run_number }}"
+          name: "愛動咖測網速 v1.0.${{ github.run_number }}"
           body: |
-            ## 🚀 NetDiagnostic Pro Android APK Release
+            ## 🚀 愛動咖測網速 Android APK Release
             - **自動雲端編譯構建**: GitHub Actions Run #${{ github.run_number }}
             - **支援系統**: Android 8.0+ (API 26+)
             - **功能包含**: 5G/4G 訊號強度 (RSRP/RSRQ/SINR)、Wi-Fi 診斷 (RSSI/頻寬)、即時網速測試
