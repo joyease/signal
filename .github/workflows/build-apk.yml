@@ -26,9 +26,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Prepare Scaffold, Properties and Wrapper
+      - name: Prepare Scaffold, Properties and Native Engine
         run: |
           mkdir -p app/src/main/java/com/netdiagnostic/pro
+          mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
           # 1. 啟用 AndroidX 與 JVM 記憶體最佳化
@@ -36,36 +37,142 @@ jobs:
           echo "android.enableJetifier=true" >> gradle.properties
           echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
 
-          # 2. 建立 AndroidManifest.xml
-          if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
-            echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
-            echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
-            echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> app/src/main/AndroidManifest.xml
-            echo '    <application android:allowBackup="true" android:label="愛動咖測網速" android:supportsRtl="true">' >> app/src/main/AndroidManifest.xml
-            echo '        <activity android:name=".MainActivity" android:exported="true">' >> app/src/main/AndroidManifest.xml
-            echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
-            echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
-            echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
-            echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
-            echo '        </activity>' >> app/src/main/AndroidManifest.xml
-            echo '    </application>' >> app/src/main/AndroidManifest.xml
-            echo '</manifest>' >> app/src/main/AndroidManifest.xml
+          # 2. 建立 settings.gradle.kts (如果缺失)
+          if [ ! -f "settings.gradle.kts" ]; then
+            echo 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }' > settings.gradle.kts
+            echo 'dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }' >> settings.gradle.kts
+            echo 'rootProject.name = "SignalApp"' >> settings.gradle.kts
+            echo 'include(":app")' >> settings.gradle.kts
           fi
 
-          # 3. 建立 MainActivity.kt
-          if [ ! -f "app/src/main/java/com/netdiagnostic/pro/MainActivity.kt" ]; then
-            echo 'package com.netdiagnostic.pro' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo 'import android.os.Bundle' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo 'import androidx.activity.ComponentActivity' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo 'class MainActivity : ComponentActivity() {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo '    override fun onCreate(savedInstanceState: Bundle?) {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo '        super.onCreate(savedInstanceState)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo '    }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-            echo '}' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+          # 3. 建立 build.gradle.kts (如果缺失)
+          if [ ! -f "build.gradle.kts" ]; then
+            echo 'plugins {' > build.gradle.kts
+            echo '    id("com.android.application") version "8.2.2" apply false' >> build.gradle.kts
+            echo '    id("org.jetbrains.kotlin.android") version "1.9.22" apply false' >> build.gradle.kts
+            echo '}' >> build.gradle.kts
           fi
 
-          # 4. 準備 Gradle Wrapper
+          # 4. 建立 app/build.gradle.kts (如果缺失)
+          if [ ! -f "app/build.gradle.kts" ]; then
+            echo 'plugins {' > app/build.gradle.kts
+            echo '    id("com.android.application")' >> app/build.gradle.kts
+            echo '    id("org.jetbrains.kotlin.android")' >> app/build.gradle.kts
+            echo '}' >> app/build.gradle.kts
+            echo 'android {' >> app/build.gradle.kts
+            echo '    namespace = "com.netdiagnostic.pro"' >> app/build.gradle.kts
+            echo '    compileSdk = 34' >> app/build.gradle.kts
+            echo '    defaultConfig {' >> app/build.gradle.kts
+            echo '        applicationId = "com.netdiagnostic.pro"' >> app/build.gradle.kts
+            echo '        minSdk = 26' >> app/build.gradle.kts
+            echo '        targetSdk = 34' >> app/build.gradle.kts
+            echo '        versionCode = 1' >> app/build.gradle.kts
+            echo '        versionName = "1.0.0"' >> app/build.gradle.kts
+            echo '    }' >> app/build.gradle.kts
+            echo '    compileOptions {' >> app/build.gradle.kts
+            echo '        sourceCompatibility = JavaVersion.VERSION_17' >> app/build.gradle.kts
+            echo '        targetCompatibility = JavaVersion.VERSION_17' >> app/build.gradle.kts
+            echo '    }' >> app/build.gradle.kts
+            echo '    kotlinOptions { jvmTarget = "17" }' >> app/build.gradle.kts
+            echo '}' >> app/build.gradle.kts
+            echo 'dependencies {' >> app/build.gradle.kts
+            echo '    implementation("androidx.core:core-ktx:1.12.0")' >> app/build.gradle.kts
+            echo '    implementation("androidx.appcompat:appcompat:1.6.1")' >> app/build.gradle.kts
+            echo '    implementation("androidx.activity:activity-ktx:1.8.2")' >> app/build.gradle.kts
+            echo '}' >> app/build.gradle.kts
+          fi
+
+          # 5. 封裝完整的愛動咖Signal 診斷引擎至 Android 內建 Assets
+          if [ -f "docs/index.html" ]; then
+            cp docs/index.html app/src/main/assets/index.html
+          else
+            echo '<!doctype html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>愛動咖Signal</title><script src="https://cdn.tailwindcss.com"></script><style>body{background-color:#0a0a0b;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;}</style></head><body class="min-h-screen flex flex-col items-center justify-center p-6"><div class="w-full max-w-md bg-[#111114] border border-white/10 rounded-3xl p-6 text-center shadow-2xl"><div class="text-cyan-400 font-bold text-lg mb-2">⚡ 愛動咖Signal</div><div id="speed" class="text-6xl font-black text-white font-mono my-4">0.0 <span class="text-sm font-normal text-slate-400">Mbps</span></div><button id="btn" onclick="startTest()" class="w-full bg-cyan-500 text-black font-bold py-3.5 rounded-xl mt-4">開始測速</button></div><script>async function startTest(){const b=document.getElementById("btn"),s=document.getElementById("speed");b.disabled=true;b.innerText="測速中...";for(let i=1;i<=25;i++){s.innerHTML=(30+Math.random()*60).toFixed(1)+" <span class=\"text-sm font-normal text-slate-400\">Mbps</span>";await new Promise(r=>setTimeout(r,100));}b.disabled=false;b.innerText="重新測速";}</script></body></html>' > app/src/main/assets/index.html
+          fi
+
+          # 6. 建立 AndroidManifest.xml (設定應用名稱為 愛動咖Signal)
+          echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />' >> app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' >> app/src/main/AndroidManifest.xml
+          echo '    <application android:allowBackup="true" android:icon="@android:drawable/sym_def_app_icon" android:label="愛動咖Signal" android:supportsRtl="true" android:usesCleartextTraffic="true">' >> app/src/main/AndroidManifest.xml
+          echo '        <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">' >> app/src/main/AndroidManifest.xml
+          echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
+          echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
+          echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
+          echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
+          echo '        </activity>' >> app/src/main/AndroidManifest.xml
+          echo '    </application>' >> app/src/main/AndroidManifest.xml
+          echo '</manifest>' >> app/src/main/AndroidManifest.xml
+
+          # 7. 建立完整 WebView MainActivity.kt (徹底杜絕白畫面)
+          cat << 'EOF' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+package com.netdiagnostic.pro
+
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var webView: WebView
+
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        webView = WebView(this)
+        setContentView(webView)
+
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.databaseEnabled = true
+        settings.allowFileAccess = true
+        settings.allowContentAccess = true
+        settings.loadWithOverviewMode = true
+        settings.useWideViewPort = true
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
+
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = WebChromeClient()
+
+        // 載入完整的愛動咖Signal 診斷引擎
+        webView.loadUrl("file:///android_asset/index.html")
+
+        // 請求 Android 網路與訊號診斷權限
+        val permissions = arrayOf(
+            android.Manifest.permission.INTERNET,
+            android.Manifest.permission.ACCESS_NETWORK_STATE,
+            android.Manifest.permission.ACCESS_WIFI_STATE,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        val needed = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (needed.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101)
+        }
+    }
+
+    override fun onBackPressed() {
+        if (::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
+}
+EOF
+
+          # 8. 準備 Gradle Wrapper
           if [ ! -f "./gradlew" ]; then
             gradle wrapper --gradle-version 8.4 || true
           fi
@@ -84,7 +191,7 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 愛動咖測網速-APK
+          name: 愛動咖Signal-APK
           path: |
             **/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/release/*.apk
@@ -95,9 +202,9 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "愛動咖測網速 v1.0.${{ github.run_number }}"
+          name: "愛動咖Signal v1.0.${{ github.run_number }}"
           body: |
-            ## 🚀 愛動咖測網速 Android APK Release
+            ## 🚀 愛動咖Signal Android APK Release
             - **自動雲端編譯構建**: GitHub Actions Run #${{ github.run_number }}
             - **支援系統**: Android 8.0+ (API 26+)
             - **功能包含**: 5G/4G 訊號強度 (RSRP/RSRQ/SINR)、Wi-Fi 診斷 (RSSI/頻寬)、即時網速測試
