@@ -1,0 +1,6 @@
+{
+  "name": "NetDiagnostic Pro - Speed & Signal Suite",
+  "description": "Cross-platform mobile network and Wi-Fi diagnostic tool with real-time speed test (downlink/uplink), ping, jitter, ISP lookup, and complete Android + GitHub Actions Mono-repo source code generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
