@@ -38,108 +38,147 @@ jobs:
           echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
 
           # 2. 建立 settings.gradle.kts
-          echo 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }' > settings.gradle.kts
-          echo 'dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }' >> settings.gradle.kts
-          echo 'rootProject.name = "SignalApp"' >> settings.gradle.kts
-          echo 'include(":app")' >> settings.gradle.kts
+          python3 -c '
+          with open("settings.gradle.kts", "w") as f:
+              f.write("""pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "SignalApp"
+          include(":app")
+          """)
+          '
 
           # 3. 建立 build.gradle.kts
-          echo 'plugins {' > build.gradle.kts
-          echo '    id("com.android.application") version "8.2.2" apply false' >> build.gradle.kts
-          echo '    id("org.jetbrains.kotlin.android") version "1.9.22" apply false' >> build.gradle.kts
-          echo '}' >> build.gradle.kts
+          python3 -c '
+          with open("build.gradle.kts", "w") as f:
+              f.write("""plugins {
+              id("com.android.application") version "8.2.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+          }
+          """)
+          '
 
           # 4. 建立 app/build.gradle.kts
-          echo 'plugins {' > app/build.gradle.kts
-          echo '    id("com.android.application")' >> app/build.gradle.kts
-          echo '    id("org.jetbrains.kotlin.android")' >> app/build.gradle.kts
-          echo '}' >> app/build.gradle.kts
-          echo 'android {' >> app/build.gradle.kts
-          echo '    namespace = "com.netdiagnostic.pro"' >> app/build.gradle.kts
-          echo '    compileSdk = 34' >> app/build.gradle.kts
-          echo '    defaultConfig {' >> app/build.gradle.kts
-          echo '        applicationId = "com.netdiagnostic.pro"' >> app/build.gradle.kts
-          echo '        minSdk = 26' >> app/build.gradle.kts
-          echo '        targetSdk = 34' >> app/build.gradle.kts
-          echo '        versionCode = 1' >> app/build.gradle.kts
-          echo '        versionName = "1.0.0"' >> app/build.gradle.kts
-          echo '    }' >> app/build.gradle.kts
-          echo '    compileOptions {' >> app/build.gradle.kts
-          echo '        sourceCompatibility = JavaVersion.VERSION_17' >> app/build.gradle.kts
-          echo '        targetCompatibility = JavaVersion.VERSION_17' >> app/build.gradle.kts
-          echo '    }' >> app/build.gradle.kts
-          echo '    kotlinOptions { jvmTarget = "17" }' >> app/build.gradle.kts
-          echo '}' >> app/build.gradle.kts
-          echo 'dependencies {' >> app/build.gradle.kts
-          echo '    implementation("androidx.core:core-ktx:1.12.0")' >> app/build.gradle.kts
-          echo '    implementation("androidx.appcompat:appcompat:1.6.1")' >> app/build.gradle.kts
-          echo '    implementation("androidx.activity:activity-ktx:1.8.2")' >> app/build.gradle.kts
-          echo '}' >> app/build.gradle.kts
+          python3 -c '
+          with open("app/build.gradle.kts", "w") as f:
+              f.write("""plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+          android {
+              namespace = "com.netdiagnostic.pro"
+              compileSdk = 34
+              defaultConfig {
+                  applicationId = "com.netdiagnostic.pro"
+                  minSdk = 26
+                  targetSdk = 34
+                  versionCode = 1
+                  versionName = "1.0.0"
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+          dependencies {
+              implementation("androidx.core:core-ktx:1.12.0")
+              implementation("androidx.appcompat:appcompat:1.6.1")
+              implementation("androidx.activity:activity-ktx:1.8.2")
+          }
+          """)
+          '
 
-          # 5. 封裝愛動咖Signal 診斷網頁引擎至 Android 內建 Assets
+          # 5. 複製愛動咖Signal 診斷網頁引擎至 Android 內建 Assets
           if [ -f "docs/index.html" ]; then
             cp docs/index.html app/src/main/assets/index.html
-          else
-            echo '<!doctype html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>愛動咖Signal</title><script src="https://cdn.tailwindcss.com"></script><style>body{background-color:#0a0a0b;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;}</style></head><body class="min-h-screen flex flex-col items-center justify-center p-6"><div class="w-full max-w-md bg-[#111114] border border-white/10 rounded-3xl p-6 text-center shadow-2xl"><div class="text-cyan-400 font-bold text-lg mb-2">⚡ 愛動咖Signal</div><div id="speed" class="text-6xl font-black text-white font-mono my-4">0.0 <span class="text-sm font-normal text-slate-400">Mbps</span></div><button id="btn" onclick="startTest()" class="w-full bg-cyan-500 text-black font-bold py-3.5 rounded-xl mt-4">開始測速</button></div><script>async function startTest(){const b=document.getElementById("btn"),s=document.getElementById("speed");b.disabled=true;b.innerText="測速中...";for(let i=1;i<=25;i++){s.innerHTML=(30+Math.random()*60).toFixed(1)+" <span class=\"text-sm font-normal text-slate-400\">Mbps</span>";await new Promise(r=>setTimeout(r,100));}b.disabled=false;b.innerText="重新測速";}</script></body></html>' > app/src/main/assets/index.html
           fi
 
           # 6. 建立 AndroidManifest.xml (設定應用名稱為 愛動咖Signal)
-          echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
-          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />' >> app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' >> app/src/main/AndroidManifest.xml
-          echo '    <application android:allowBackup="true" android:icon="@android:drawable/sym_def_app_icon" android:label="愛動咖Signal" android:supportsRtl="true" android:usesCleartextTraffic="true">' >> app/src/main/AndroidManifest.xml
-          echo '        <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">' >> app/src/main/AndroidManifest.xml
-          echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
-          echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
-          echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
-          echo '            </intent-filter>' >> app/endactivity>' >> app/src/main/AndroidManifest.xml
-          echo '    </application>' >> app/src/main/AndroidManifest.xml
-          echo '</manifest>' >> app/src/main/AndroidManifest.xml
-          # 修正 endactivity 標籤
-          sed -i 's/<\/endactivity>/<\/activity>/g' app/src/main/AndroidManifest.xml
+          python3 -c '
+          with open("app/src/main/AndroidManifest.xml", "w") as f:
+              f.write("""<?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <application android:allowBackup="true" android:icon="@android:drawable/sym_def_app_icon" android:label="愛動咖Signal" android:supportsRtl="true" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """)
+          '
 
           # 7. 建立完整 WebView MainActivity.kt (解決空白畫面)
-          echo 'package com.netdiagnostic.pro' > app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.annotation.SuppressLint' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.content.pm.PackageManager' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.os.Bundle' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.webkit.WebChromeClient' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.webkit.WebSettings' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.webkit.WebView' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import android.webkit.WebViewClient' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import androidx.appcompat.app.AppCompatActivity' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import androidx.core.app.ActivityCompat' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'import androidx.core.content.ContextCompat' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo 'class MainActivity : AppCompatActivity() {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    private lateinit var webView: WebView' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    @SuppressLint("SetJavaScriptEnabled")' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    override fun onCreate(savedInstanceState: Bundle?) {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        super.onCreate(savedInstanceState)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        webView = WebView(this)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        setContentView(webView)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        val settings: WebSettings = webView.settings' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.javaScriptEnabled = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.domStorageEnabled = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.databaseEnabled = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.allowFileAccess = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.allowContentAccess = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.loadWithOverviewMode = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.useWideViewPort = true' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        settings.cacheMode = WebSettings.LOAD_DEFAULT' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        webView.webViewClient = WebViewClient()' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        webView.webChromeClient = WebChromeClient()' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        webView.loadUrl("file:///android_asset/index.html")' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        val permissions = arrayOf(android.Manifest.permission.INTERNET, android.Manifest.permission.ACCESS_NETWORK_STATE, android.Manifest.permission.ACCESS_WIFI_STATE, android.Manifest.permission.ACCESS_FINE_LOCATION)' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        val needed = permissions.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        if (needed.isNotEmpty()) { ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101) }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    override fun onBackPressed() {' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '        if (::webView.isInitialized && webView.canGoBack()) { webView.goBack() } else { super.onBackPressed() }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '    }' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
-          echo '}' >> app/src/main/java/com/netdiagnostic/pro/MainActivity.kt
+          python3 -c '
+          with open("app/src/main/java/com/netdiagnostic/pro/MainActivity.kt", "w") as f:
+              f.write("""package com.netdiagnostic.pro
+
+          import android.annotation.SuppressLint
+          import android.content.pm.PackageManager
+          import android.os.Bundle
+          import android.webkit.WebChromeClient
+          import android.webkit.WebSettings
+          import android.webkit.WebView
+          import android.webkit.WebViewClient
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.core.app.ActivityCompat
+          import androidx.core.content.ContextCompat
+
+          class MainActivity : AppCompatActivity() {
+              private lateinit var webView: WebView
+
+              @SuppressLint("SetJavaScriptEnabled")
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  
+                  webView = WebView(this)
+                  setContentView(webView)
+
+                  val settings: WebSettings = webView.settings
+                  settings.javaScriptEnabled = true
+                  settings.domStorageEnabled = true
+                  settings.databaseEnabled = true
+                  settings.allowFileAccess = true
+                  settings.allowContentAccess = true
+                  settings.loadWithOverviewMode = true
+                  settings.useWideViewPort = true
+                  settings.cacheMode = WebSettings.LOAD_DEFAULT
+
+                  webView.webViewClient = WebViewClient()
+                  webView.webChromeClient = WebChromeClient()
+
+                  webView.loadUrl("file:///android_asset/index.html")
+
+                  val permissions = arrayOf(
+                      android.Manifest.permission.INTERNET,
+                      android.Manifest.permission.ACCESS_NETWORK_STATE,
+                      android.Manifest.permission.ACCESS_WIFI_STATE,
+                      android.Manifest.permission.ACCESS_FINE_LOCATION
+                  )
+                  val needed = permissions.filter {
+                      ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+                  }
+                  if (needed.isNotEmpty()) {
+                      ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101)
+                  }
+              }
+
+              override fun onBackPressed() {
+                  if (::webView.isInitialized && webView.canGoBack()) {
+                      webView.goBack()
+                  } else {
+                      super.onBackPressed()
+                  }
+              }
+          }
+          """)
+          '
 
           # 8. 準備 Gradle Wrapper
           if [ ! -f "./gradlew" ]; then
